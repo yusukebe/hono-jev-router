@@ -29,4 +29,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - name: Publish to npm
-        run: npm stage publish --provenance --access public
+        # A brand-new package can neither be staged nor use trusted publishing,
+        # so the first version is published with a token. TODO: remove after the first release.
+        run: |
+          if npm view hono-jev-router version > /dev/null 2>&1; then
+            npm stage publish --provenance --access public
+          else
+            npm publish --provenance --access public
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
