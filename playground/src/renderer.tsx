@@ -1,7 +1,7 @@
 import { jsxRenderer } from 'hono/jsx-renderer'
 import { Link, Script, ViteClient } from 'vite-ssr-components/hono'
 
-const TITLE = 'Jev Router for Hono'
+const TITLE = 'JevRouter for Hono'
 const DESCRIPTION =
   'Route HTTP requests by meaning. Describe a request in plain words and Jev decides which handler answers.'
 
