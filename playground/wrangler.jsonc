@@ -12,5 +12,5 @@
     // Calls to Jev, per IP. User code can call the JEV binding as often as it likes, so count here too
     { "name": "JEV_LIMITER", "namespace_id": "1002", "simple": { "limit": 12, "period": 60 } },
   ],
-  "vars": { "AI_GATEWAY_ID": "default" },
+  "vars": { "AI_GATEWAY_ID": "jev-router" },
 }
