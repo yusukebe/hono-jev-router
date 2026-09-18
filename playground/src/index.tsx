@@ -48,6 +48,22 @@ type RunRequest = {
   request: { method: string; path: string; headers: Record<string, string>; body?: string }
 }
 
+const HonoLogo = () => (
+  <svg class='logo' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 76 98' aria-label='Hono'>
+    <path
+      fill='url(#flame)'
+      d='m11 25 7 9s9-18 22-34c17 20 36 48 36 64 0 20-19 34-37 34C17 98 0 81 0 61c0-6 3-24 11-36Z'
+    />
+    <path fill='#F95' d='M39 21c47 51 14 66 0 66-11 0-51-11 0-66Z' />
+    <defs>
+      <linearGradient id='flame' x2='0%' y2='100%'>
+        <stop stop-color='#F84' />
+        <stop offset='100%' stop-color='#F30' />
+      </linearGradient>
+    </defs>
+  </svg>
+)
+
 const app = new Hono<{ Bindings: CloudflareBindings }>()
 
 app.post('/run', async (c) => {
@@ -100,17 +116,25 @@ app.post('/run', async (c) => {
 app.get('/', renderer, (c) => {
   return c.render(
     <main>
-      <h1>
-        <span>Jev</span> Router
-      </h1>
-      <p class='tagline'>
-        Route HTTP requests by meaning. Edit the descriptions, send a request, see who answers.
-      </p>
+      <header>
+        <HonoLogo />
+        <div>
+          <h1>
+            <span>Jev</span> Router <small>for Hono</small>
+          </h1>
+          <p class='tagline'>
+            Route HTTP requests by meaning. Edit the descriptions, send a request, see who answers.
+          </p>
+        </div>
+      </header>
 
       <div class='grid'>
         <section class='panel'>
           <h2>Code — runs in a Dynamic Worker</h2>
-          <textarea id='code' spellcheck={false}></textarea>
+          <div class='editor'>
+            <pre id='highlight' aria-hidden='true'></pre>
+            <textarea id='code' spellcheck={false}></textarea>
+          </div>
         </section>
 
         <section class='panel'>
@@ -145,6 +169,14 @@ app.get('/', renderer, (c) => {
           <div id='response'></div>
         </section>
       </div>
+
+      <footer>
+        <code>npm i hono-jev-router</code>
+        <a href='https://github.com/yusukebe/hono-jev-router'>GitHub</a>
+        <a href='https://www.npmjs.com/package/hono-jev-router'>npm</a>
+        <a href='https://hono.dev'>Hono</a>
+        <a href='https://typesafe.ai'>Jev</a>
+      </footer>
     </main>
   )
 })

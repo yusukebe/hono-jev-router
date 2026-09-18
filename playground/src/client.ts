@@ -1,3 +1,5 @@
+import { highlight } from './highlight'
+
 const DEFAULT_CODE = `import { Hono } from 'hono'
 import { JevRouter } from 'hono-jev-router'
 
@@ -156,11 +158,23 @@ for (const name of Object.keys(PRESETS)) {
 $('send').addEventListener('click', send)
 
 const code = $<HTMLTextAreaElement>('code')
+const highlighted = $('highlight')
+const render = () => {
+  highlighted.innerHTML = highlight(code.value)
+}
+const syncScroll = () => {
+  highlighted.scrollTop = code.scrollTop
+  highlighted.scrollLeft = code.scrollLeft
+}
 code.value = DEFAULT_CODE
+render()
+code.addEventListener('input', render)
+code.addEventListener('scroll', syncScroll)
 code.addEventListener('keydown', (e) => {
   if (e.key === 'Tab') {
     e.preventDefault()
     code.setRangeText('  ', code.selectionStart, code.selectionEnd, 'end')
+    render()
   }
   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
     void send()

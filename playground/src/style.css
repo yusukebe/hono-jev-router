@@ -9,6 +9,10 @@
   --accent: #1a1814;
   --accent-text: #f6f2e8;
   --accent-soft: #ddd5c1;
+  /* The one color: Hono's flame */
+  --hono: #d9480f;
+  --hono-soft: #f6dcc8;
+  --string: #7a5c2e;
   --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
 }
@@ -23,6 +27,9 @@
     --accent: #e6dfcd;
     --accent-text: #15140f;
     --accent-soft: #33302658;
+    --hono: #ff8a4c;
+    --hono-soft: #4a2a17;
+    --string: #c9a66b;
   }
 }
 * {
@@ -48,6 +55,43 @@ h1 {
 }
 h1 span {
   font-style: italic;
+}
+h1 small {
+  font-size: 16px;
+  color: var(--hono);
+  margin-left: 4px;
+}
+header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.logo {
+  width: 34px;
+  flex: none;
+  margin-bottom: 18px;
+}
+footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 28px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--muted);
+}
+footer code {
+  font: 13px var(--mono);
+  color: var(--text);
+  margin-right: auto;
+}
+a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+a:hover {
+  color: var(--hono);
 }
 .tagline {
   margin: 2px 0 20px;
@@ -93,9 +137,56 @@ textarea {
   white-space: pre;
   overflow: auto;
 }
-#code {
+.editor {
+  position: relative;
   height: 470px;
+  background: var(--field);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+.editor:focus-within {
+  border-color: var(--text);
+}
+.editor pre,
+.editor textarea {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 10px 12px;
+  border: 0;
+  font: 13px/1.6 var(--mono);
   tab-size: 2;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+.editor pre {
+  overflow: hidden;
+  pointer-events: none;
+}
+.editor textarea {
+  width: 100%;
+  height: 100%;
+  resize: none;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--text);
+  outline: none;
+}
+.t-comment {
+  color: var(--muted);
+  font-style: italic;
+}
+.t-keyword {
+  font-weight: 600;
+}
+.t-string,
+.t-number {
+  color: var(--string);
+}
+.t-description {
+  color: var(--hono);
+  background: var(--hono-soft);
+  border-radius: 2px;
 }
 #headers {
   height: 150px;
@@ -189,7 +280,10 @@ button:hover {
   transition: width 0.4s;
 }
 .bar.win {
-  border-color: var(--accent);
+  border-color: var(--hono);
+}
+.bar.win i {
+  background: var(--hono-soft);
 }
 .bar span {
   position: relative;
