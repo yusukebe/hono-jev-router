@@ -6,7 +6,7 @@ import { JevRouter } from 'hono-jev-router'
 const app = new Hono({ router: new JevRouter() })
 
 app.on('jev', 'a request from an AI agent', (c) => {
-  return c.text('# Documentation\\n\\nHello, agent. Here is clean markdown.', 200, {
+  return c.text('# Documentation', 200, {
     'Content-Type': 'text/markdown',
   })
 })
@@ -168,7 +168,14 @@ const syncScroll = () => {
 }
 code.value = DEFAULT_CODE
 render()
-code.addEventListener('input', render)
+code.addEventListener('input', () => {
+  render()
+  // Browsers keep the left padding scrolled out after a long line. Reset it at the start of a line.
+  if (code.selectionStart === 0 || code.value[code.selectionStart - 1] === '\n') {
+    code.scrollLeft = 0
+  }
+  syncScroll()
+})
 code.addEventListener('scroll', syncScroll)
 code.addEventListener('keydown', (e) => {
   if (e.key === 'Tab') {

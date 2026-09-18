@@ -85,7 +85,9 @@ export const chooseWithJev = async (input: JevInput, run: JevRun): Promise<JevRe
         key,
         {
           type: 'noul',
-          instructions: `Does this HTTP request match the description "${input.routes[i]}"?`,
+          // Asking about the handler, not "does it match": a single request is never "all requests",
+          // but it is one that a handler for "all requests" should receive.
+          instructions: `A router has a handler for requests described as "${input.routes[i]}" (the description may be in any language). Is this HTTP request one that the handler should receive?`,
         },
       ])
     ),

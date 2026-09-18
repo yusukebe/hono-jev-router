@@ -139,7 +139,6 @@ textarea {
 }
 .editor {
   position: relative;
-  height: 470px;
   background: var(--field);
   border: 1px solid var(--border);
   border-radius: 2px;
@@ -149,28 +148,35 @@ textarea {
 }
 .editor pre,
 .editor textarea {
-  position: absolute;
-  inset: 0;
   margin: 0;
-  padding: 10px 12px;
+  padding: 12px 14px 24px;
   border: 0;
   font: 13px/1.6 var(--mono);
   tab-size: 2;
   white-space: pre;
   overflow-wrap: normal;
 }
+/* The <pre> is in the flow and sets the height, so the editor grows with the code */
 .editor pre {
+  min-height: 440px;
   overflow: hidden;
   pointer-events: none;
 }
 .editor textarea {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   resize: none;
+  overflow: auto hidden;
   background: transparent;
   color: transparent;
   caret-color: var(--text);
   outline: none;
+}
+textarea {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 .t-comment {
   color: var(--muted);
