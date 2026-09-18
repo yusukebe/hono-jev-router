@@ -1,0 +1,60 @@
+{
+  "name": "hono-jev-router",
+  "version": "0.0.1",
+  "description": "Route HTTP requests by meaning. A semantic router for Hono powered by Jev.",
+  "keywords": [
+    "hono",
+    "jev",
+    "router",
+    "semantic",
+    "typesafe"
+  ],
+  "homepage": "https://github.com/yusukebe/hono-jev-router",
+  "license": "MIT",
+  "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yusukebe/hono-jev-router.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "node --test 'test/*.test.ts'",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt --check",
+    "format:fix": "oxfmt",
+    "release": "np --no-publish"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.1",
+    "hono": "^4.13.8",
+    "np": "^12.1.1",
+    "oxfmt": "^0.68.0",
+    "oxlint": "^1.83.0",
+    "typescript": "^7.0.2"
+  },
+  "peerDependencies": {
+    "hono": ">=4.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@11.24.0"
+}

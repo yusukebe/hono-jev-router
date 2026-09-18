@@ -1,0 +1,21 @@
+{
+  "name": "jev-router-playground",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:modules": "node scripts/build-modules.mjs",
+    "dev": "pnpm build:modules && wrangler dev",
+    "deploy": "pnpm build:modules && wrangler deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.13.8"
+  },
+  "devDependencies": {
+    "@hono/cli": "0.2.0-next.8",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.133.0"
+  }
+}

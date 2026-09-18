@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jev Router</title>
+    <style>
+      :root {
+        --bg: #fbfaf7;
+        --panel: #fff;
+        --text: #1c1b19;
+        --muted: #77736b;
+        --border: #e3dfd6;
+        --accent: #e8590c;
+        --accent-soft: #fff0e6;
+        --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #161513;
+          --panel: #1f1e1b;
+          --text: #ece9e2;
+          --muted: #979288;
+          --border: #34322d;
+          --accent: #ff8a4c;
+          --accent-soft: #3a2416;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px 16px 64px;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          15px/1.5 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 1120px;
+        margin: 0 auto;
+      }
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: -0.02em;
+      }
+      h1 span {
+        color: var(--accent);
+      }
+      .tagline {
+        margin: 2px 0 20px;
+        color: var(--muted);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 800px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px;
+        min-width: 0;
+      }
+      .panel h2 {
+        margin: 0 0 10px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      textarea,
+      input,
+      select {
+        width: 100%;
+        background: var(--bg);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px 10px;
+        font: 13px/1.55 var(--mono);
+      }
+      textarea {
+        resize: vertical;
+        white-space: pre;
+        overflow: auto;
+      }
+      #code {
+        height: 470px;
+        tab-size: 2;
+      }
+      #headers {
+        height: 150px;
+      }
+      #body {
+        height: 70px;
+      }
+      label {
+        display: block;
+        margin: 10px 0 4px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+      .row select {
+        width: 110px;
+        flex: none;
+      }
+      .presets {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 4px;
+      }
+      button {
+        font: inherit;
+        cursor: pointer;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text);
+        padding: 5px 12px;
+        font-size: 13px;
+      }
+      button:hover {
+        border-color: var(--accent);
+      }
+      #send {
+        width: 100%;
+        margin-top: 14px;
+        padding: 11px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 600;
+        font-size: 15px;
+      }
+      #send:disabled {
+        opacity: 0.6;
+        cursor: wait;
+      }
+      #result {
+        margin-top: 16px;
+        display: none;
+      }
+      .matched {
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        overflow-wrap: anywhere;
+      }
+      .matched small {
+        font-size: 13px;
+        font-weight: 400;
+        color: var(--muted);
+        margin-left: 8px;
+      }
+      .bars {
+        margin: 12px 0 0;
+        display: grid;
+        gap: 6px;
+      }
+      .bar {
+        position: relative;
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 13px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+      }
+      .bar i {
+        position: absolute;
+        inset: 0 auto 0 0;
+        background: var(--accent-soft);
+        transition: width 0.4s;
+      }
+      .bar.win {
+        border-color: var(--accent);
+      }
+      .bar span {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .status {
+        font: 600 14px var(--mono);
+      }
+      pre {
+        margin: 8px 0 0;
+        font: 13px/1.55 var(--mono);
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      pre.headers {
+        color: var(--muted);
+      }
+      .error {
+        color: #e03131;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1><span>Jev</span> Router</h1>
+      <p class="tagline">
+        Route HTTP requests by meaning. Edit the descriptions, send a request, see who answers.
+      </p>
+
+      <div class="grid">
+        <section class="panel">
+          <h2>Code — runs in a Dynamic Worker</h2>
+          <textarea id="code" spellcheck="false"></textarea>
+        </section>
+
+        <section class="panel">
+          <h2>Request</h2>
+          <div class="presets" id="presets"></div>
+          <label for="path">Method / Path</label>
+          <div class="row">
+            <select id="method">
+              <option>GET</option>
+              <option>POST</option>
+              <option>PUT</option>
+              <option>PATCH</option>
+              <option>DELETE</option>
+            </select>
+            <input id="path" spellcheck="false" />
+          </div>
+          <label for="headers">Headers</label>
+          <textarea id="headers" spellcheck="false"></textarea>
+          <label for="body">Body</label>
+          <textarea id="body" spellcheck="false"></textarea>
+          <button id="send">Send Request</button>
+        </section>
+      </div>
+
+      <div class="grid" id="result">
+        <section class="panel">
+          <h2>Matched route</h2>
+          <div id="matched"></div>
+        </section>
+        <section class="panel">
+          <h2>Response <span id="time"></span></h2>
+          <div id="response"></div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module">
+      const DEFAULT_CODE = `import { Hono } from 'hono'
+import { JevRouter } from 'hono-jev-router'
+
+const app = new Hono({ router: new JevRouter() })
+
+app.on('jev', 'a request from an AI agent', (c) => {
+  return c.text('# Documentation\\n\\nHello, agent. Here is clean markdown.', 200, {
+    'Content-Type': 'text/markdown',
+  })
+})
+
+app.on('jev', 'a request from a human browser', (c) => {
+  return c.html('<h1>Documentation</h1><p>Hello, human.</p>')
+})
+
+app.on('jev', 'suspicious automated traffic', (c) => {
+  return c.text('Forbidden', 403)
+})
+
+export default app
+`
+
+      const PRESETS = {
+        'Human Browser': {
+          method: 'GET',
+          path: '/docs',
+          headers: [
+            'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+            'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language: ja,en-US;q=0.9,en;q=0.8',
+            'Sec-Fetch-Dest: document',
+            'Sec-Fetch-Mode: navigate',
+            'Referer: https://www.google.com/',
+            'Cookie: theme=dark',
+          ],
+        },
+        'AI Agent': {
+          method: 'GET',
+          path: '/docs',
+          headers: [
+            'User-Agent: Claude-User/1.0 (+https://www.anthropic.com)',
+            'Accept: text/markdown, text/plain;q=0.9, */*;q=0.1',
+          ],
+        },
+        'Suspicious Bot': {
+          method: 'POST',
+          path: '/wp-login.php',
+          headers: [
+            'User-Agent: python-requests/2.31.0',
+            'Accept: */*',
+            'Content-Type: application/x-www-form-urlencoded',
+          ],
+          body: 'log=admin&pwd=123456',
+        },
+      }
+
+      const $ = (id) => document.getElementById(id)
+      const escape = (s) =>
+        s.replace(
+          /[&<>"]/g,
+          (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]
+        )
+
+      const applyPreset = (name) => {
+        const preset = PRESETS[name]
+        $('method').value = preset.method
+        $('path').value = preset.path
+        $('headers').value = preset.headers.join('\n')
+        $('body').value = preset.body ?? ''
+      }
+
+      for (const name of Object.keys(PRESETS)) {
+        const button = document.createElement('button')
+        button.textContent = name
+        button.onclick = () => applyPreset(name)
+        $('presets').append(button)
+      }
+
+      const parseHeaders = (text) =>
+        Object.fromEntries(
+          text
+            .split('\n')
+            .map((line) => line.match(/^\s*([^:\s]+)\s*:\s*(.*)$/))
+            .filter(Boolean)
+            .map(([, key, value]) => [key, value])
+        )
+
+      const renderMatched = (jev) => {
+        if (!jev) {
+          return '<div class="matched">—<small>no semantic route was involved</small></div>'
+        }
+        const bars = Object.entries(jev.probabilities)
+          .map(([route, p]) => {
+            const percent = (p * 100).toFixed(1)
+            return `<div class="bar ${route === jev.route ? 'win' : ''}"><i style="width:${percent}%"></i><span><b>${escape(route)}</b><em>${percent}%</em></span></div>`
+          })
+          .join('')
+        return `<div class="matched">“${escape(jev.route)}”<small>confidence ${jev.confidence.toFixed(2)}</small></div><div class="bars">${bars}</div>`
+      }
+
+      const renderResponse = (res) => {
+        const headers = Object.entries(res.headers)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join('\n')
+        return `<div class="status">${res.status} ${escape(res.statusText)}</div><pre class="headers">${escape(headers)}</pre><pre>${escape(res.body)}</pre>`
+      }
+
+      const send = async () => {
+        $('send').disabled = true
+        $('send').textContent = 'Asking Jev…'
+        const started = performance.now()
+        try {
+          const res = await fetch('/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              code: $('code').value,
+              request: {
+                method: $('method').value,
+                path: $('path').value || '/',
+                headers: parseHeaders($('headers').value),
+                body: $('body').value,
+              },
+            }),
+          })
+          const data = await res.json()
+          $('result').style.display = 'grid'
+          $('time').textContent = `· ${Math.round(performance.now() - started)}ms`
+          if (data.error) {
+            $('matched').innerHTML = '<div class="matched">—</div>'
+            $('response').innerHTML = `<pre class="error">${escape(data.error)}</pre>`
+          } else {
+            $('matched').innerHTML = renderMatched(data.jev)
+            $('response').innerHTML = renderResponse(data.response)
+          }
+        } finally {
+          $('send').disabled = false
+          $('send').textContent = 'Send Request'
+        }
+      }
+
+      $('send').onclick = send
+      $('code').value = DEFAULT_CODE
+      $('code').addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+          e.preventDefault()
+          e.target.setRangeText('  ', e.target.selectionStart, e.target.selectionEnd, 'end')
+        }
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send()
+      })
+      applyPreset('AI Agent')
+    </script>
+  </body>
+</html>
