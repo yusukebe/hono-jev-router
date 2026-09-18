@@ -83,25 +83,21 @@ app.on('jev', 'suspicious automated traffic', …)`
 </svg>`
 }
 
+// For sharing on X: nothing but the code, as large as the longest line allows
 const share = (code) => {
-  const size = 27
-  const lineHeight = 43
-  const lines = code.split('\n')
   const width = 1600
-  const pad = 90
-  const cardTop = 250
-  const cardHeight = lines.length * lineHeight + 84
-  const height = cardTop + cardHeight + 150
+  const pad = 76
+  const lines = code.split('\n')
+  const longest = Math.max(...lines.map((line) => line.length))
+  const size = Math.floor((width - pad * 2) / longest / ADVANCE)
+  const lineHeight = Math.round(size * 1.55)
+  const top = pad + size
+  const height = top + (lines.length - 1) * lineHeight + 150
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${DEFS}
   <rect width="${width}" height="${height}" fill="${C.bg}"/>
-  ${flame(pad, 78, 58)}
-  <text x="${pad + 80}" y="136" font-family="${SERIF}" font-size="76" fill="${C.text}"><tspan font-style="italic">Jev</tspan> Router</text>
-  <text x="${pad + 448}" y="136" font-family="${SERIF}" font-size="32" fill="${C.hono}">for Hono</text>
-  <text x="${pad + 2}" y="200" font-family="${SANS}" font-size="32" fill="${C.muted}">Route HTTP requests by meaning.</text>
-  <rect x="${pad}" y="${cardTop}" width="${width - pad * 2}" height="${cardHeight}" rx="4" fill="${C.panel}" stroke="${C.text}" stroke-width="2.5"/>
-  ${codeBlock(code, pad + 44, cardTop + 76, size, lineHeight)}
-  <text x="${pad + 2}" y="${height - 66}" font-family="${MONO}" font-size="28" fill="${C.text}">npm i hono-jev-router</text>
-  <text x="${width - pad}" y="${height - 66}" text-anchor="end" font-family="${SANS}" font-size="26" fill="${C.muted}">github.com/yusukebe/hono-jev-router</text>
+  ${codeBlock(code, pad, top, size, lineHeight)}
+  ${flame(pad, height - 84, 26)}
+  <text x="${pad + 42}" y="${height - 56}" font-family="${MONO}" font-size="26" fill="${C.muted}">hono-jev-router</text>
 </svg>`
 }
 
