@@ -100,7 +100,9 @@ export const chooseWithJev = async (input: JevInput, run: JevRun): Promise<JevRe
   }
 }
 
-const TEXT_CONTENT_TYPE = /^text\/|json|xml|x-www-form-urlencoded/
+// text/*, */json, */xml, +json, +xml (e.g. image/svg+xml) and urlencoded forms.
+// Not a bare `xml`: it would match application/vnd.openxmlformats-... (xlsx, docx)
+const TEXT_CONTENT_TYPE = /^text\/|[/+](json|xml)\s*($|;)|^application\/x-www-form-urlencoded/i
 
 // Cache the body as an ArrayBuffer: Hono derives text(), json(), formData() and blob() from it
 // without loss, so handlers can still read the body, even a binary one.

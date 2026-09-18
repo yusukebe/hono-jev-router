@@ -71,3 +71,39 @@ test('handlers can still read the body, even a binary one', async () => {
   })
   assert.deepEqual(await json.json(), { hello: 'jev' })
 })
+
+test('only textual bodies are shown to Jev', async () => {
+  const bodies: Record<string, string | undefined> = {}
+  const app = new Hono({
+    router: new JevRouter({
+      run: (c, request) => {
+        bodies[request.state.headers['content-type']] = request.state.body
+        return run(c, request)
+      },
+    }),
+  })
+  app.on('jev', 'anything', (c) => c.text('ok'))
+
+  const xlsx = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  const contentTypes = [
+    'Application/JSON; charset=utf-8',
+    'application/ld+json',
+    'image/svg+xml',
+    'application/x-www-form-urlencoded',
+    xlsx,
+    'application/octet-stream',
+  ]
+  await Promise.all(
+    contentTypes.map((contentType) =>
+      app.request('/', { method: 'POST', body: 'hello', headers: { 'Content-Type': contentType } })
+    )
+  )
+  assert.deepEqual(bodies, {
+    'Application/JSON; charset=utf-8': 'hello',
+    'application/ld+json': 'hello',
+    'image/svg+xml': 'hello',
+    'application/x-www-form-urlencoded': 'hello',
+    [xlsx]: `[5 bytes of ${xlsx}]`,
+    'application/octet-stream': '[5 bytes of application/octet-stream]',
+  })
+})
