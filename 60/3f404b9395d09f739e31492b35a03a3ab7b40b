@@ -1,0 +1,19 @@
+README.md
+  s_fcdefe50c3c5bd::t_a8e114757582ce 12,99,102,105,108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "603f404b9395d09f739e31492b35a03a3ab7b40b",
+  "prompts": {},
+  "sessions": {
+    "s_fcdefe50c3c5bd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "faf0eebc-9f0a-4734-95f3-f92b44c2f42e",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
