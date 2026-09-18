@@ -1,6 +1,6 @@
 {
   "name": "hono-jev-router",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Route HTTP requests by meaning. A semantic router for Hono powered by Jev.",
   "keywords": [
     "hono",
