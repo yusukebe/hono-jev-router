@@ -1,0 +1,59 @@
+.github/workflows/ci.yml
+  s_fcdefe50c3c5bd::t_ae7a61e08e82bc 1-26
+.github/workflows/release.yml
+  s_fcdefe50c3c5bd::t_f2ab3bd1f20990 1-32
+.gitignore
+  s_fcdefe50c3c5bd::t_352870f224c999 1-6
+.oxfmtrc.json
+  s_fcdefe50c3c5bd::t_0f7d429bf650ac 1-11
+.oxlintrc.json
+  s_fcdefe50c3c5bd::t_5b709262936bb3 1-26
+LICENSE
+  s_fcdefe50c3c5bd::t_84bd2f78737392 1-21
+README.md
+  s_fcdefe50c3c5bd::t_b8f9acbc61e519 1-150
+package.json
+  s_fcdefe50c3c5bd::t_94ed59130960ac 1-60
+playground/package.json
+  s_fcdefe50c3c5bd::t_9cb60b470b1268 1-21
+playground/public/index.html
+  s_fcdefe50c3c5bd::t_00bbe3fecdeab7 1-417
+playground/scripts/build-modules.mjs
+  s_fcdefe50c3c5bd::t_f78b23dac7ece0 1-37
+playground/src/index.ts
+  s_fcdefe50c3c5bd::t_d19c0a3d9c32ba 1-99
+playground/src/playground-router.ts
+  s_fcdefe50c3c5bd::t_61bee6fca72685 1-24
+playground/tsconfig.json
+  s_fcdefe50c3c5bd::t_e6c133367d3646 1-12
+playground/wrangler.jsonc
+  s_fcdefe50c3c5bd::t_25560316dc61a8 1-13
+pnpm-lock.yaml
+  s_fcdefe50c3c5bd::t_c2727a898ca43e 1-4758
+pnpm-workspace.yaml
+  s_fcdefe50c3c5bd::t_eeb16f9f383323 1-5
+src/index.ts
+  s_fcdefe50c3c5bd::t_c2a8deaa137830 1-183
+test/index.test.ts
+  s_fcdefe50c3c5bd::t_030a20913d5176 1-73
+tsconfig.build.json
+  s_fcdefe50c3c5bd::t_310b1a9a2a5e1f 1-12
+tsconfig.json
+  s_fcdefe50c3c5bd::t_9e317f0fd0d78e 1-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "328180609253d514059b5436c06fbf368a3033f0",
+  "prompts": {},
+  "sessions": {
+    "s_fcdefe50c3c5bd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "faf0eebc-9f0a-4734-95f3-f92b44c2f42e",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
