@@ -10,6 +10,7 @@ import {
   type JevResponse,
   type JevResult,
 } from '../../src/index'
+import { EXAMPLES } from './examples'
 import { ERROR_HEADER, RESULT_HEADER } from './playground-router'
 import { renderer } from './renderer'
 
@@ -30,11 +31,16 @@ type JevAi = {
 }
 
 // The only capability user code gets. The AI binding never leaves the host.
-export class JevBinding extends WorkerEntrypoint<CloudflareBindings, { ip: string }> {
+// `ip` is null for the built-in examples: their Worker is shared by every visitor, they ask Jev
+// once per run, and runs are already limited per IP.
+export class JevBinding extends WorkerEntrypoint<CloudflareBindings, { ip: string | null }> {
   async choose(input: JevInput): Promise<JevResult> {
-    const { success } = await this.env.JEV_LIMITER.limit({ key: this.ctx.props.ip })
-    if (!success) {
-      throw new Error('Rate limit exceeded. Try again in a minute.')
+    const { ip } = this.ctx.props
+    if (ip !== null) {
+      const { success } = await this.env.JEV_LIMITER.limit({ key: ip })
+      if (!success) {
+        throw new Error('Rate limit exceeded. Try again in a minute.')
+      }
     }
     const routes = input.routes.slice(0, MAX_ROUTES).map((r) => String(r).slice(0, 300))
     if (routes.length === 0 || JSON.stringify(input.state).length > MAX_STATE_LENGTH) {
@@ -97,6 +103,11 @@ const readText = async (res: Response, max: number) => {
   return `${text.slice(0, max)}\n… (truncated)`
 }
 
+const sha256 = async (text: string) => {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
 const timeout = (ms: number) =>
   new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timed out')), ms))
 
@@ -117,7 +128,12 @@ app.post('/run', bodyLimit({ maxSize: MAX_REQUEST_LENGTH }), async (c) => {
   }
 
   try {
-    const worker = c.env.LOADER.load({
+    // A Dynamic Worker is billed once per ID and code per day, and `load()` counts every call.
+    // So: one shared Worker per built-in example, one per visitor for edited code.
+    const isExample = EXAMPLES.some((example) => example.code === code)
+    const jevIp = isExample ? null : ip
+    const id = await sha256(isExample ? code : `${ip}\n${code}`)
+    const worker = c.env.LOADER.get(id, () => ({
       compatibilityDate: '2026-09-01',
       mainModule: 'app.js',
       modules: {
@@ -125,11 +141,11 @@ app.post('/run', bodyLimit({ maxSize: MAX_REQUEST_LENGTH }), async (c) => {
         // Bare names like 'hono' need an explicit module type
         ...Object.fromEntries(Object.entries(modules).map(([name, js]) => [name, { js }])),
       },
-      env: { JEV: c.executionCtx.exports.JevBinding({ props: { ip } }) },
+      env: { JEV: c.executionCtx.exports.JevBinding({ props: { ip: jevIp } }) },
       // No network, little CPU. The JEV binding is all it can reach.
       globalOutbound: null,
       limits: { cpuMs: 100, subRequests: 5 },
-    })
+    }))
     const hasBody = request.body && !['GET', 'HEAD'].includes(request.method)
     const run = worker.getEntrypoint().fetch(
       new Request(new URL(request.path, 'https://playground.example'), {
