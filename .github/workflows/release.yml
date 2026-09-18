@@ -29,4 +29,4 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - name: Publish to npm
-        run: npm stage publish --provenance --access public
+        run: npm publish --provenance --access public
