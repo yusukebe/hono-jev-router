@@ -1,0 +1,43 @@
+.oxfmtrc.json
+  s_fcdefe50c3c5bd::t_886cfcf417778f 10
+.oxlintrc.json
+  s_fcdefe50c3c5bd::t_6b28b9ec43dc38 19
+playground/package.json
+  s_fcdefe50c3c5bd::t_c1fc1fd650e15b 6-9,11,17,20-21
+playground/src/client.ts
+  s_fcdefe50c3c5bd::t_243698aa4791c8 1,23-129,131-168,170
+playground/src/index.tsx
+  s_fcdefe50c3c5bd::t_b1b67c8873017b 3,12,18-26,100-151
+playground/src/modules.d.ts
+  s_fcdefe50c3c5bd::t_c00e00ea0f5596 1-3
+playground/src/renderer.tsx
+  s_fcdefe50c3c5bd::t_7da867a1192df4 1-18
+playground/src/style.css
+  s_fcdefe50c3c5bd::t_659770537b9cf2 1-220
+playground/tsconfig.client.json
+  s_fcdefe50c3c5bd::t_be47bc79e6ce19 1-14
+playground/tsconfig.json
+  s_fcdefe50c3c5bd::t_64d28ac1ee9997 3,9-12,14-15
+playground/vite.config.ts
+  s_fcdefe50c3c5bd::t_394bed0bc78ef7 1,3-4,6,13-39,42-44
+playground/wrangler.jsonc
+  s_fcdefe50c3c5bd::t_02cc7bb570b4d9 5,7
+pnpm-lock.yaml
+  s_fcdefe50c3c5bd::t_5dec6e3a320a11 36-38,45-50,61-72,77-93,107-113,759-761,769-771,787-789,1055-1153,1520-1528,1635-1643,1929-1933,1949-2022,2116-2118,2129-2133,2302-2305,2310-2313,2384-2388,2459-2462,2576-2579,2656-2702,2780-2791,2794-2820,2829-2842,3248-3252,3257-3261,3279-3280,3419-3465,3740-3745,3910-3913,4161-4162,4173-4221,4332-4333,4340-4341,4563-4564,4569-4574,4642-4662,4741-4742,4849-4853,4939-4958
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a26eecf1264549bf94cca4138c85eed890f12133",
+  "prompts": {},
+  "sessions": {
+    "s_fcdefe50c3c5bd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "faf0eebc-9f0a-4734-95f3-f92b44c2f42e",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
