@@ -9,7 +9,7 @@ import { Hono } from 'hono'
 import { JevRouter } from 'hono-jev-router'
 
 const app = new Hono({
-  router: new JevRouter({ apiKey: (c) => c.env.TYPESAFE_API_KEY }),
+  router: new JevRouter({ apiKey: process.env.TYPESAFE_API_KEY }),
 })
 
 app.on('jev', 'a request from an AI agent', (c) => {
@@ -96,19 +96,16 @@ app.notFound((c) => c.text('Not sure what you are', 404))
 
 ### `apiKey`
 
-A function receives the Context, so on Cloudflare Workers the key can come from `c.env`:
+Your TypeSafe API key as a string:
+
+```ts
+new JevRouter({ apiKey: process.env.TYPESAFE_API_KEY })
+```
+
+On Cloudflare Workers, `process.env` holds your variables and secrets only when the `nodejs_compat` flag is on and the compatibility date is `2025-04-01` or later. Otherwise pass a function. It receives the Context, so the key can come from `c.env`:
 
 ```ts
 new JevRouter({ apiKey: (c) => c.env.TYPESAFE_API_KEY })
-```
-
-On Node.js, Bun or Deno, `c.env` does not hold environment variables. Pass a string, or use the `env()` helper from `hono/adapter`, which works on every runtime:
-
-```ts
-import { env } from 'hono/adapter'
-
-new JevRouter({ apiKey: process.env.TYPESAFE_API_KEY })
-new JevRouter({ apiKey: (c) => env(c).TYPESAFE_API_KEY })
 ```
 
 ### `run`: Workers AI / AI Gateway
