@@ -83,21 +83,23 @@ app.on('jev', 'suspicious automated traffic', …)`
 </svg>`
 }
 
-// For sharing on X: nothing but the code, as large as the longest line allows
+// For sharing on X: a framed card with nothing but the code, as large as the longest line allows
 const share = (code) => {
   const width = 1600
-  const pad = 76
+  const margin = 56
+  const pad = 52
   const lines = code.split('\n')
   const longest = Math.max(...lines.map((line) => line.length))
-  const size = Math.floor((width - pad * 2) / longest / ADVANCE)
+  const size = Math.floor((width - (margin + pad) * 2) / longest / ADVANCE)
   const lineHeight = Math.round(size * 1.55)
-  const top = pad + size
-  const height = top + (lines.length - 1) * lineHeight + 150
+  const cardHeight = pad * 2 + size + (lines.length - 1) * lineHeight
+  const height = margin + cardHeight + 96
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${DEFS}
   <rect width="${width}" height="${height}" fill="${C.bg}"/>
-  ${codeBlock(code, pad, top, size, lineHeight)}
-  ${flame(pad, height - 84, 26)}
-  <text x="${pad + 42}" y="${height - 56}" font-family="${MONO}" font-size="26" fill="${C.muted}">hono-jev-router</text>
+  <rect x="${margin}" y="${margin}" width="${width - margin * 2}" height="${cardHeight}" rx="4" fill="${C.panel}" stroke="${C.text}" stroke-width="2.5"/>
+  ${codeBlock(code, margin + pad, margin + pad + size * 0.82, size, lineHeight)}
+  ${flame(margin, height - 68, 24)}
+  <text x="${margin + 38}" y="${height - 42}" font-family="${MONO}" font-size="25" fill="${C.muted}">hono-jev-router</text>
 </svg>`
 }
 
