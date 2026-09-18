@@ -1,0 +1,43 @@
+.gitignore
+  s_fcdefe50c3c5bd::t_9f9a36cca32241 6-7
+.oxfmtrc.json
+  s_fcdefe50c3c5bd::t_52284670c24ce3 10
+.oxlintrc.json
+  s_fcdefe50c3c5bd::t_9238ec60b22ca0 19-27
+README.md
+  s_fcdefe50c3c5bd::t_b09214dae8dc18 33-38,95
+playground/scripts/images.mjs
+  s_fcdefe50c3c5bd::t_054f8dd5f8b9dd 1-134
+playground/src/client.ts
+  s_fcdefe50c3c5bd::t_33a9237c2f872e 1,19,124-153
+playground/src/examples.ts
+  s_fcdefe50c3c5bd::t_8286aabee8b600 1-156
+playground/src/index.tsx
+  s_fcdefe50c3c5bd::t_e074bf9d84caea 3-4,19-21,33,35-38,78-107,109,128-129,131,134,141,150-155,162,180
+playground/src/renderer.tsx
+  s_fcdefe50c3c5bd::t_619dd171912539 4-10,16-29
+playground/src/style.css
+  s_fcdefe50c3c5bd::t_d5f67418cdd10e 217-238
+playground/wrangler.jsonc
+  s_fcdefe50c3c5bd::t_c88e86e2902575 9-12
+src/index.ts
+  s_fcdefe50c3c5bd::t_db86f17edc37dd 43-47,52-59,171-173,180-182
+test/index.test.ts
+  s_fcdefe50c3c5bd::t_aaafecd2f01d70 125-148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a09d8c3b58d640400d5f75c72f9cc704370c3c16",
+  "prompts": {},
+  "sessions": {
+    "s_fcdefe50c3c5bd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "faf0eebc-9f0a-4734-95f3-f92b44c2f42e",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
