@@ -3,3 +3,5 @@ dist
 .wrangler
 .dev.vars
 worker-configuration.d.ts
+playground/images
+.DS_Store

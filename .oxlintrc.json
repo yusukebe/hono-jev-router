@@ -16,5 +16,13 @@
     "typescript/no-explicit-any": "warn",
     "import/no-duplicates": "error"
   },
-  "ignorePatterns": ["dist", "**/worker-configuration.d.ts"]
+  "ignorePatterns": ["dist", "**/worker-configuration.d.ts", "playground/images"],
+  "overrides": [
+    {
+      "files": ["playground/scripts/**"],
+      "rules": {
+        "no-console": "off"
+      }
+    }
+  ]
 }

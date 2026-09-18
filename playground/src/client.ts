@@ -1,62 +1,5 @@
+import { EXAMPLES, type Example, type Preset } from './examples'
 import { highlight } from './highlight'
-
-const DEFAULT_CODE = `import { Hono } from 'hono'
-import { JevRouter } from 'hono-jev-router'
-
-const app = new Hono({ router: new JevRouter() })
-
-app.on('jev', 'a request from an AI agent', (c) => {
-  return c.text('# Documentation', 200, {
-    'Content-Type': 'text/markdown',
-  })
-})
-
-app.on('jev', 'a request from a human browser', (c) => {
-  return c.html('<h1>Documentation</h1><p>Hello, human.</p>')
-})
-
-app.on('jev', 'suspicious automated traffic', (c) => {
-  return c.text('Forbidden', 403)
-})
-
-export default app
-`
-
-type Preset = { method: string; path: string; headers: string[]; body?: string }
-
-const PRESETS: Record<string, Preset> = {
-  'Human Browser': {
-    method: 'GET',
-    path: '/docs',
-    headers: [
-      'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
-      'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-      'Accept-Language: ja,en-US;q=0.9,en;q=0.8',
-      'Sec-Fetch-Dest: document',
-      'Sec-Fetch-Mode: navigate',
-      'Referer: https://www.google.com/',
-      'Cookie: theme=dark',
-    ],
-  },
-  'AI Agent': {
-    method: 'GET',
-    path: '/docs',
-    headers: [
-      'User-Agent: Claude-User/1.0 (+https://www.anthropic.com)',
-      'Accept: text/markdown, text/plain;q=0.9, */*;q=0.1',
-    ],
-  },
-  'Suspicious Bot': {
-    method: 'POST',
-    path: '/wp-login.php',
-    headers: [
-      'User-Agent: python-requests/2.31.0',
-      'Accept: */*',
-      'Content-Type: application/x-www-form-urlencoded',
-    ],
-    body: 'log=admin&pwd=123456',
-  },
-}
 
 type JevResult = { route?: string; probabilities: Record<string, number> }
 type RunResponse = {
@@ -73,8 +16,7 @@ const field = (id: string) => $<HTMLInputElement | HTMLTextAreaElement | HTMLSel
 const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }
 const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (ch) => ESCAPES[ch])
 
-const applyPreset = (name: string) => {
-  const preset = PRESETS[name]
+const applyPreset = (preset: Preset) => {
   field('method').value = preset.method
   field('path').value = preset.path
   field('headers').value = preset.headers.join('\n')
@@ -148,13 +90,6 @@ const send = async () => {
   }
 }
 
-for (const name of Object.keys(PRESETS)) {
-  const button = document.createElement('button')
-  button.textContent = name
-  button.addEventListener('click', () => applyPreset(name))
-  $('presets').append(button)
-}
-
 $('send').addEventListener('click', send)
 
 const code = $<HTMLTextAreaElement>('code')
@@ -166,8 +101,6 @@ const syncScroll = () => {
   highlighted.scrollTop = code.scrollTop
   highlighted.scrollLeft = code.scrollLeft
 }
-code.value = DEFAULT_CODE
-render()
 code.addEventListener('input', () => {
   render()
   // Browsers keep the left padding scrolled out after a long line. Reset it at the start of a line.
@@ -188,4 +121,33 @@ code.addEventListener('keydown', (e) => {
   }
 })
 
-applyPreset('AI Agent')
+const buttons = (container: HTMLElement, names: string[], onSelect: (name: string) => void) => {
+  container.replaceChildren(
+    ...names.map((name) => {
+      const button = document.createElement('button')
+      button.textContent = name
+      button.addEventListener('click', () => {
+        container
+          .querySelectorAll('button')
+          .forEach((b) => b.classList.toggle('active', b === button))
+        onSelect(name)
+      })
+      return button
+    })
+  )
+  container.querySelector('button')?.click()
+}
+
+const applyExample = (example: Example) => {
+  code.value = example.code
+  code.scrollLeft = 0
+  render()
+  $('result').style.display = 'none'
+  buttons($('presets'), Object.keys(example.presets), (name) => applyPreset(example.presets[name]))
+}
+
+buttons(
+  $('examples'),
+  EXAMPLES.map((example) => example.name),
+  (name) => applyExample(EXAMPLES.find((example) => example.name === name)!)
+)

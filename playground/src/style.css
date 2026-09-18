@@ -214,6 +214,28 @@ label {
   width: 110px;
   flex: none;
 }
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-bottom: -1px;
+}
+.tabs button {
+  border-bottom-color: transparent;
+  margin-right: -1px;
+  color: var(--muted);
+  position: relative;
+}
+.tabs button.active {
+  background: var(--field);
+  color: var(--text);
+  border-color: var(--border);
+  border-bottom-color: var(--field);
+  z-index: 1;
+}
+.presets button.active {
+  border-color: var(--text);
+}
 .presets {
   display: flex;
   flex-wrap: wrap;

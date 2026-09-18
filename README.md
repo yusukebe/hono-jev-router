@@ -30,6 +30,12 @@ export default app
 > [!WARNING]
 > This is an experiment. Every semantically routed request calls a model, so it adds latency and cost, and the answer is a probability, not a guarantee.
 
+## Before you use it
+
+- **Do not use it for authentication or authorization.** The request is the input of the model, so whoever sends the request can try to steer the answer. `'suspicious automated traffic'` is a heuristic, not a security boundary.
+- **Requests are sent to a third party.** The method, URL, headers and the first `maxBodyLength` bytes of a textual body go to Jev. The values of `Authorization`, `Cookie`, `Proxy-Authorization`, `X-API-Key` and `X-Auth-Token` are replaced with `[redacted]`. Change the list with `redactHeaders`.
+- **Every semantically routed request is a model call you pay for.** Put a rate limit in front of it.
+
 ## Install
 
 ```bash
@@ -86,6 +92,7 @@ new JevRouter({
   baseURL, // default: 'https://api.typesafe.ai'
   threshold, // a route matches when its probability is at least this. default: 0.5
   maxBodyLength, // how much of the request body Jev sees. default: 4096
+  redactHeaders, // header values Jev must not see. default: authorization, cookie, ...
   run, // reach Jev some other way
   choose, // replace the whole decision
 })

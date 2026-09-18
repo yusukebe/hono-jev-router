@@ -122,3 +122,27 @@ test('only textual bodies are shown to Jev', async () => {
     'application/octet-stream': '[5 bytes of application/octet-stream]',
   })
 })
+
+test('sensitive header values are not shown to Jev', async () => {
+  let headers: Record<string, string> = {}
+  const app = new Hono({
+    router: new JevRouter({
+      run: (c, request) => {
+        headers = request.state.headers
+        return run(c, request)
+      },
+    }),
+  })
+  app.on('jev', 'any GET request', (c) => c.text(c.req.header('Authorization') ?? ''))
+
+  const res = await app.request('/', {
+    headers: { Authorization: 'Bearer secret', Cookie: 'session=secret', Accept: 'text/html' },
+  })
+  assert.deepEqual(headers, {
+    authorization: '[redacted]',
+    cookie: '[redacted]',
+    accept: 'text/html',
+  })
+  // The handler still sees the real value
+  assert.equal(await res.text(), 'Bearer secret')
+})

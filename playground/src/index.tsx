@@ -1,5 +1,7 @@
 import { WorkerEntrypoint } from 'cloudflare:workers'
 import { Hono } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
+import { secureHeaders } from 'hono/secure-headers'
 import { modules } from 'virtual:dynamic-worker-modules'
 import {
   chooseWithJev,
@@ -14,6 +16,9 @@ import { renderer } from './renderer'
 const MAX_CODE_LENGTH = 20_000
 const MAX_STATE_LENGTH = 16_000
 const MAX_ROUTES = 20
+const MAX_REQUEST_LENGTH = 64 * 1024
+const MAX_RESPONSE_LENGTH = 100 * 1024
+const RUN_TIMEOUT = 10_000
 
 // 'typesafe/jev' is not in the generated AI types yet
 type JevAi = {
@@ -25,8 +30,12 @@ type JevAi = {
 }
 
 // The only capability user code gets. The AI binding never leaves the host.
-export class JevBinding extends WorkerEntrypoint<CloudflareBindings> {
+export class JevBinding extends WorkerEntrypoint<CloudflareBindings, { ip: string }> {
   async choose(input: JevInput): Promise<JevResult> {
+    const { success } = await this.env.JEV_LIMITER.limit({ key: this.ctx.props.ip })
+    if (!success) {
+      throw new Error('Rate limit exceeded. Try again in a minute.')
+    }
     const routes = input.routes.slice(0, MAX_ROUTES).map((r) => String(r).slice(0, 300))
     if (routes.length === 0 || JSON.stringify(input.state).length > MAX_STATE_LENGTH) {
       throw new Error('Invalid Jev input')
@@ -66,9 +75,38 @@ const HonoLogo = () => (
 
 const app = new Hono<{ Bindings: CloudflareBindings }>()
 
-app.post('/run', async (c) => {
+// Read at most `max` bytes, then stop the stream. User code may return an endless body.
+const readText = async (res: Response, max: number) => {
+  if (!res.body) {
+    return ''
+  }
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let text = ''
+  let length = 0
+  while (length < max) {
+    // oxlint-disable-next-line no-await-in-loop -- chunks of one stream, read in order
+    const { done, value } = await reader.read()
+    if (done) {
+      return text
+    }
+    length += value.byteLength
+    text += decoder.decode(value, { stream: true })
+  }
+  await reader.cancel()
+  return `${text.slice(0, max)}\n… (truncated)`
+}
+
+const timeout = (ms: number) =>
+  new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timed out')), ms))
+
+app.post('/run', bodyLimit({ maxSize: MAX_REQUEST_LENGTH }), async (c) => {
+  // A JSON content type forces a CORS preflight, so other sites cannot make visitors run code here
+  if (!c.req.header('content-type')?.startsWith('application/json')) {
+    return c.json({ error: 'Content-Type must be application/json' }, 415)
+  }
   const ip = c.req.header('cf-connecting-ip') ?? 'local'
-  const { success } = await c.env.RATE_LIMITER.limit({ key: ip })
+  const { success } = await c.env.RUN_LIMITER.limit({ key: ip })
   if (!success) {
     return c.json({ error: 'Rate limit exceeded. Try again in a minute.' }, 429)
   }
@@ -87,17 +125,20 @@ app.post('/run', async (c) => {
         // Bare names like 'hono' need an explicit module type
         ...Object.fromEntries(Object.entries(modules).map(([name, js]) => [name, { js }])),
       },
-      env: { JEV: c.executionCtx.exports.JevBinding({ props: {} }) },
+      env: { JEV: c.executionCtx.exports.JevBinding({ props: { ip } }) },
+      // No network, little CPU. The JEV binding is all it can reach.
       globalOutbound: null,
+      limits: { cpuMs: 100, subRequests: 5 },
     })
     const hasBody = request.body && !['GET', 'HEAD'].includes(request.method)
-    const res = await worker.getEntrypoint().fetch(
+    const run = worker.getEntrypoint().fetch(
       new Request(new URL(request.path, 'https://playground.example'), {
         method: request.method,
         headers: request.headers,
         body: hasBody ? request.body : undefined,
       })
     )
+    const res = await Promise.race([run, timeout(RUN_TIMEOUT)])
     const headers = Object.fromEntries(res.headers)
     const jev = headers[RESULT_HEADER]
     delete headers[RESULT_HEADER]
@@ -106,14 +147,19 @@ app.post('/run', async (c) => {
     }
     return c.json({
       jev: jev ? JSON.parse(decodeURIComponent(jev)) : null,
-      response: { status: res.status, statusText: res.statusText, headers, body: await res.text() },
+      response: {
+        status: res.status,
+        statusText: res.statusText,
+        headers,
+        body: await Promise.race([readText(res, MAX_RESPONSE_LENGTH), timeout(RUN_TIMEOUT)]),
+      },
     })
   } catch (e) {
     return c.json({ error: e instanceof Error ? e.message : String(e) }, 400)
   }
 })
 
-app.get('/', renderer, (c) => {
+app.get('/', secureHeaders(), renderer, (c) => {
   return c.render(
     <main>
       <header>
@@ -131,6 +177,7 @@ app.get('/', renderer, (c) => {
       <div class='grid'>
         <section class='panel'>
           <h2>Code — runs in a Dynamic Worker</h2>
+          <div class='tabs' id='examples'></div>
           <div class='editor'>
             <pre id='highlight' aria-hidden='true'></pre>
             <textarea id='code' spellcheck={false}></textarea>

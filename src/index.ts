@@ -40,10 +40,23 @@ export type JevRouterOptions = {
   threshold?: number
   /** Default: 4096 */
   maxBodyLength?: number
+  /**
+   * Headers whose values are replaced with `[redacted]` before the request is shown to Jev.
+   * Default: authorization, cookie, proxy-authorization, x-api-key, x-auth-token
+   */
+  redactHeaders?: string[]
 }
 
 const METHOD = 'JEV'
 const DEFAULT_THRESHOLD = 0.5
+// Jev only needs to know these exist, not what they hold
+const DEFAULT_REDACT_HEADERS = [
+  'authorization',
+  'cookie',
+  'proxy-authorization',
+  'x-api-key',
+  'x-auth-token',
+]
 
 export type JevRequest = {
   state: JevState
@@ -155,13 +168,18 @@ export class JevRouter<T> implements Router<T> {
   #dispatch = async (c: Context, next: Next) => {
     const { choose, run, apiKey, baseURL, maxBodyLength = 4096 } = this.#options
     const threshold = this.#options.threshold ?? DEFAULT_THRESHOLD
+    const redact = new Set(
+      (this.#options.redactHeaders ?? DEFAULT_REDACT_HEADERS).map((name) => name.toLowerCase())
+    )
     const req = c.req.raw
     const body = req.body ? await readBody(c, maxBodyLength) : undefined
     const input: JevInput = {
       state: {
         method: req.method,
         url: req.url,
-        headers: Object.fromEntries(req.headers),
+        headers: Object.fromEntries(
+          [...req.headers].map(([name, value]) => [name, redact.has(name) ? '[redacted]' : value])
+        ),
         ...(body ? { body } : {}),
       },
       routes: this.#routes.map((r) => r.description),
