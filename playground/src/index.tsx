@@ -1,6 +1,6 @@
 import { WorkerEntrypoint } from 'cloudflare:workers'
 import { Hono } from 'hono'
-import { modules } from './generated/modules'
+import { modules } from 'virtual:dynamic-worker-modules'
 import {
   chooseWithJev,
   type JevInput,
@@ -9,10 +9,20 @@ import {
   type JevResult,
 } from '../../src/index'
 import { ERROR_HEADER, RESULT_HEADER } from './playground-router'
+import { renderer } from './renderer'
 
 const MAX_CODE_LENGTH = 20_000
 const MAX_STATE_LENGTH = 16_000
 const MAX_ROUTES = 20
+
+// 'typesafe/jev' is not in the generated AI types yet
+type JevAi = {
+  run(
+    model: string,
+    request: JevRequest,
+    options: { gateway: { id: string } }
+  ): Promise<{ result: JevResponse }>
+}
 
 // The only capability user code gets. The AI binding never leaves the host.
 export class JevBinding extends WorkerEntrypoint<CloudflareBindings> {
@@ -23,7 +33,6 @@ export class JevBinding extends WorkerEntrypoint<CloudflareBindings> {
     }
     return chooseWithJev(
       { state: input.state, routes, threshold: Number(input.threshold) || 0.5 },
-      // 'typesafe/jev' is not in the generated AI types yet
       async (request) => {
         const { result } = await (this.env.AI as unknown as JevAi).run('typesafe/jev', request, {
           gateway: { id: this.env.AI_GATEWAY_ID },
@@ -32,14 +41,6 @@ export class JevBinding extends WorkerEntrypoint<CloudflareBindings> {
       }
     )
   }
-}
-
-type JevAi = {
-  run(
-    model: string,
-    request: JevRequest,
-    options: { gateway: { id: string } }
-  ): Promise<{ result: JevResponse }>
 }
 
 type RunRequest = {
@@ -94,6 +95,58 @@ app.post('/run', async (c) => {
   } catch (e) {
     return c.json({ error: e instanceof Error ? e.message : String(e) }, 400)
   }
+})
+
+app.get('/', renderer, (c) => {
+  return c.render(
+    <main>
+      <h1>
+        <span>Jev</span> Router
+      </h1>
+      <p class='tagline'>
+        Route HTTP requests by meaning. Edit the descriptions, send a request, see who answers.
+      </p>
+
+      <div class='grid'>
+        <section class='panel'>
+          <h2>Code — runs in a Dynamic Worker</h2>
+          <textarea id='code' spellcheck={false}></textarea>
+        </section>
+
+        <section class='panel'>
+          <h2>Request</h2>
+          <div class='presets' id='presets'></div>
+          <label for='path'>Method / Path</label>
+          <div class='row'>
+            <select id='method'>
+              {['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map((method) => (
+                <option>{method}</option>
+              ))}
+            </select>
+            <input id='path' spellcheck={false} />
+          </div>
+          <label for='headers'>Headers</label>
+          <textarea id='headers' spellcheck={false}></textarea>
+          <label for='body'>Body</label>
+          <textarea id='body' spellcheck={false}></textarea>
+          <button id='send'>Send Request</button>
+        </section>
+      </div>
+
+      <div class='grid' id='result'>
+        <section class='panel'>
+          <h2>Matched route</h2>
+          <div id='matched'></div>
+        </section>
+        <section class='panel'>
+          <h2>
+            Response <span id='time'></span>
+          </h2>
+          <div id='response'></div>
+        </section>
+      </div>
+    </main>
+  )
 })
 
 export default app

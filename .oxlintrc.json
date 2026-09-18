@@ -16,11 +16,5 @@
     "typescript/no-explicit-any": "warn",
     "import/no-duplicates": "error"
   },
-  "ignorePatterns": ["dist", "playground/src/generated", "**/worker-configuration.d.ts"],
-  "overrides": [
-    {
-      "files": ["playground/scripts/**"],
-      "rules": { "no-console": "off" }
-    }
-  ]
+  "ignorePatterns": ["dist", "**/worker-configuration.d.ts"]
 }

@@ -7,5 +7,5 @@
   "jsxSingleQuote": true,
   "trailingComma": "es5",
   "endOfLine": "lf",
-  "ignorePatterns": ["dist", "playground/src/generated", "**/worker-configuration.d.ts"]
+  "ignorePatterns": ["dist", "**/worker-configuration.d.ts"]
 }
