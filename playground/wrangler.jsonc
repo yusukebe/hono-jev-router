@@ -3,6 +3,7 @@
   "name": "jev-router-playground",
   "compatibility_date": "2026-09-01",
   "main": "./src/index.tsx",
+  "routes": [{ "pattern": "hono-jev-router.yusuke.run", "custom_domain": true }],
   "worker_loaders": [{ "binding": "LOADER" }],
   "ai": { "binding": "AI" },
   "ratelimits": [
