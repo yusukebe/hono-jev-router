@@ -354,11 +354,14 @@ export default app
         }
         const bars = Object.entries(jev.probabilities)
           .map(([route, p]) => {
-            const percent = (p * 100).toFixed(1)
+            const percent = (p * 100).toFixed(0)
             return `<div class="bar ${route === jev.route ? 'win' : ''}"><i style="width:${percent}%"></i><span><b>${escape(route)}</b><em>${percent}%</em></span></div>`
           })
           .join('')
-        return `<div class="matched">“${escape(jev.route)}”<small>confidence ${jev.confidence.toFixed(2)}</small></div><div class="bars">${bars}</div>`
+        const matched = jev.route
+          ? `“${escape(jev.route)}”<small>first route over the threshold</small>`
+          : '—<small>no route reached the threshold</small>'
+        return `<div class="matched">${matched}</div><div class="bars">${bars}</div>`
       }
 
       const renderResponse = (res) => {

@@ -22,7 +22,7 @@ export class JevBinding extends WorkerEntrypoint<CloudflareBindings> {
       throw new Error('Invalid Jev input')
     }
     return chooseWithJev(
-      { state: input.state, routes },
+      { state: input.state, routes, threshold: Number(input.threshold) || 0.5 },
       // 'typesafe/jev' is not in the generated AI types yet
       async (request) => {
         const { result } = await (this.env.AI as unknown as JevAi).run('typesafe/jev', request, {

@@ -13,13 +13,15 @@ export type JevInput = {
   state: JevState
   /** Semantic route descriptions, in registration order */
   routes: string[]
+  threshold: number
 }
 
 export type JevResult = {
-  /** The chosen route description */
-  route: string
+  /** The matched route description. `undefined` if no route reached the threshold. */
+  route?: string
+  /** The probability of the matched route, or 0 */
   confidence: number
-  /** Route description -> probability */
+  /** Route description -> probability that the request matches it. They are independent. */
   probabilities: Record<string, number>
 }
 
@@ -34,28 +36,22 @@ export type JevRouterOptions = {
   run?: (c: Context, request: JevRequest) => Promise<JevResponse>
   /** Replace the whole decision, e.g. delegate it to an RPC binding */
   choose?: (c: Context, input: JevInput) => Promise<JevResult>
-  /** Below this confidence no semantic route matches. Default: 0 */
+  /** A route matches when its probability is at least this. Default: 0.5 */
   threshold?: number
   /** Default: 4096 */
   maxBodyLength?: number
 }
 
 const METHOD = 'JEV'
-const INSTRUCTIONS = 'Which description best matches this HTTP request?'
+const DEFAULT_THRESHOLD = 0.5
 
 export type JevRequest = {
   state: JevState
-  questions: Record<
-    string,
-    { type: 'choice'; instructions: string; criteria: Record<string, string> }
-  >
+  questions: Record<string, { type: 'noul'; instructions: string }>
 }
 
 export type JevResponse = {
-  answers: Record<
-    string,
-    { choice: string; confidence: number; probabilities: Record<string, number> }
-  >
+  answers: Record<string, { noul: number }>
 }
 
 /** How the request reaches Jev, e.g. `(req) => env.AI.run('typesafe/jev', req)` */
@@ -76,28 +72,29 @@ export const fetchJev =
     return res.json()
   }
 
-/** Ask Jev (Choice) which route description matches the request state. */
+/**
+ * Ask Jev whether the request matches each description (one Noul question per route, one call).
+ * Like a normal router, the first registered route that matches wins.
+ */
 export const chooseWithJev = async (input: JevInput, run: JevRun): Promise<JevResult> => {
-  // Option names are visible to the model, so keep them neutral and map back
   const keys = input.routes.map((_, i) => `route_${i + 1}`)
   const { answers } = await run({
     state: input.state,
-    questions: {
-      route: {
-        type: 'choice',
-        instructions: INSTRUCTIONS,
-        criteria: Object.fromEntries(keys.map((key, i) => [key, input.routes[i]])),
-      },
-    },
-  })
-  const answer = answers.route
-  return {
-    route: input.routes[keys.indexOf(answer.choice)],
-    confidence: answer.confidence,
-    probabilities: Object.fromEntries(
-      keys.map((key, i) => [input.routes[i], answer.probabilities[key] ?? 0])
+    questions: Object.fromEntries(
+      keys.map((key, i) => [
+        key,
+        {
+          type: 'noul',
+          instructions: `Does this HTTP request match the description "${input.routes[i]}"?`,
+        },
+      ])
     ),
-  }
+  })
+  const probabilities = Object.fromEntries(
+    keys.map((key, i) => [input.routes[i], answers[key]?.noul ?? 0])
+  )
+  const route = input.routes.find((r) => probabilities[r] >= input.threshold)
+  return { route, confidence: route ? probabilities[route] : 0, probabilities }
 }
 
 // text/*, */json, */xml, +json, +xml (e.g. image/svg+xml) and urlencoded forms.
@@ -154,7 +151,8 @@ export class JevRouter<T> implements Router<T> {
   }
 
   #dispatch = async (c: Context, next: Next) => {
-    const { choose, run, apiKey, baseURL, threshold = 0, maxBodyLength = 4096 } = this.#options
+    const { choose, run, apiKey, baseURL, maxBodyLength = 4096 } = this.#options
+    const threshold = this.#options.threshold ?? DEFAULT_THRESHOLD
     const req = c.req.raw
     const body = req.body ? await readBody(c, maxBodyLength) : undefined
     const input: JevInput = {
@@ -165,6 +163,7 @@ export class JevRouter<T> implements Router<T> {
         ...(body ? { body } : {}),
       },
       routes: this.#routes.map((r) => r.description),
+      threshold,
     }
     const result = choose
       ? await choose(c, input)

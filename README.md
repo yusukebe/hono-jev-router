@@ -39,18 +39,23 @@ npm i hono-jev-router
 ## How it works
 
 ```
-HTTP Request → JevRouter → Jev compares the request with your descriptions → best match → handler → Response
+HTTP Request → JevRouter → Jev: "does the request match this description?" → first match → handler → Response
 ```
 
 - `app.on('jev', '<description>', handler)` registers a semantic route.
-- The method, URL, headers and body of the request are sent to Jev as one [Choice](https://docs.typesafe.ai/primitives/choice) question.
-- The handler of the chosen description runs. It is a normal Hono handler: `c.req.method` and `c.req.path` are those of the real request.
+- The method, URL, headers and body of the request are sent to Jev with one yes/no ([Noul](https://docs.typesafe.ai/primitives/noul)) question per description. They are evaluated in parallel in a single call.
+- Like a normal router, **the first registered route that matches wins**. A route matches when its probability reaches the `threshold`.
+- The handler is a normal Hono handler: `c.req.method` and `c.req.path` are those of the real request.
+- If no description matches, the request falls through, usually to `app.notFound()`.
 - Everything else works as usual. Path routes and middleware are handled by Hono's `TrieRouter`, and a path route that returns a response wins before Jev is asked.
 
 ```ts
 app.use(logger())
 app.get('/health', (c) => c.text('ok')) // Jev is not called
-app.on('jev', 'someone asking for the pricing', (c) => c.redirect('/pricing'))
+
+// Order matters: put specific descriptions first, broad ones last
+app.on('jev', 'suspicious automated traffic', (c) => c.text('Forbidden', 403))
+app.on('jev', 'any GET request', (c) => c.text('Hello!'))
 ```
 
 ## The result
@@ -65,11 +70,13 @@ const app = new Hono<{ Variables: { jev: JevResult } }>({ router: new JevRouter(
 app.on('jev', 'a request from an AI agent', (c) => {
   const { route, confidence, probabilities } = c.get('jev')
   // route: 'a request from an AI agent'
-  // confidence: 0.98
-  // probabilities: { 'a request from an AI agent': 0.98, ... }
+  // confidence: 0.94
+  // probabilities: { 'a request from an AI agent': 0.94, 'a request from a human browser': 0.2 }
   return c.json({ route, confidence, probabilities })
 })
 ```
+
+The probabilities are independent of each other, so they do not add up to 1.
 
 ## Options
 
@@ -77,7 +84,7 @@ app.on('jev', 'a request from an AI agent', (c) => {
 new JevRouter({
   apiKey, // string | (c) => string
   baseURL, // default: 'https://api.typesafe.ai'
-  threshold, // below this confidence no semantic route matches. default: 0
+  threshold, // a route matches when its probability is at least this. default: 0.5
   maxBodyLength, // how much of the request body Jev sees. default: 4096
   run, // reach Jev some other way
   choose, // replace the whole decision
@@ -86,10 +93,10 @@ new JevRouter({
 
 ### `threshold`
 
-If the confidence is lower than `threshold`, no semantic route matches and the request falls through, usually to `app.notFound()`.
+Raise it to make every route stricter. Requests that match nothing fall through:
 
 ```ts
-const app = new Hono({ router: new JevRouter({ apiKey, threshold: 0.5 }) })
+const app = new Hono({ router: new JevRouter({ apiKey, threshold: 0.8 }) })
 
 app.notFound((c) => c.text('Not sure what you are', 404))
 ```
@@ -130,11 +137,11 @@ const app = new Hono<{ Bindings: Bindings }>({
 
 ### `choose`
 
-Replaces the decision itself. It receives the request state and the descriptions, and returns a `JevResult`. Useful for tests, caching, or delegating to something that holds the credentials:
+Replaces the decision itself. It receives the request state, the descriptions and the threshold, and returns a `JevResult`. Useful for tests, caching, or delegating to something that holds the credentials:
 
 ```ts
 new JevRouter({
-  choose: (c, input) => c.env.JEV.choose(input), // input: { state, routes }
+  choose: (c, input) => c.env.JEV.choose(input), // input: { state, routes, threshold }
 })
 ```
 

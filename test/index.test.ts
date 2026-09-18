@@ -3,15 +3,18 @@ import { test } from 'node:test'
 import { Hono } from 'hono'
 import { JevRouter, type JevRequest } from '../src/index.ts'
 
-// Stands in for Jev: picks the route whose description mentions the User-Agent
+// Stands in for Jev: a route matches when its description mentions the User-Agent or the method
 const run = async (_c: unknown, request: JevRequest) => {
-  const criteria = request.questions.route.criteria
-  const ua = request.state.headers['user-agent']
-  const choice = Object.keys(criteria).find((key) => criteria[key].includes(ua)) ?? 'route_1'
-  const probabilities = Object.fromEntries(
-    Object.keys(criteria).map((k) => [k, k === choice ? 1 : 0])
+  const { method, headers } = request.state
+  const ua = headers['user-agent']
+  const answers = Object.fromEntries(
+    Object.entries(request.questions).map(([key, { instructions }]) => {
+      const description = instructions.match(/"(.*)"/)?.[1] ?? ''
+      const matches = description.includes(ua) || description.includes(`any ${method}`)
+      return [key, { noul: matches ? 0.9 : 0.1 }]
+    })
   )
-  return { answers: { route: { choice, confidence: ua === 'unsure' ? 0.2 : 0.9, probabilities } } }
+  return { answers }
 }
 
 const createApp = (threshold?: number) => {
@@ -46,9 +49,21 @@ test('path routes still work', async () => {
   assert.equal(await res.text(), 'ok')
 })
 
-test('falls through to notFound below the threshold', async () => {
-  const res = await createApp(0.5).request('/docs', { headers: { 'User-Agent': 'unsure' } })
-  assert.equal(res.status, 404)
+test('the first registered route that matches wins', async () => {
+  const app = new Hono({ router: new JevRouter({ run }) })
+  app.on('jev', 'any GET request', (c) => c.text('all!'))
+  app.on('jev', 'a request from browser', (c) => c.text('browser'))
+  const get = await app.request('/', { headers: { 'User-Agent': 'browser' } })
+  assert.equal(await get.text(), 'all!')
+  const post = await app.request('/', { method: 'POST', headers: { 'User-Agent': 'browser' } })
+  assert.equal(await post.text(), 'browser')
+})
+
+test('falls through to notFound when no route reaches the threshold', async () => {
+  const unknown = await createApp().request('/docs', { headers: { 'User-Agent': 'unknown' } })
+  assert.equal(unknown.status, 404)
+  const strict = await createApp(0.95).request('/docs', { headers: { 'User-Agent': 'agent' } })
+  assert.equal(strict.status, 404)
 })
 
 test('handlers can still read the body, even a binary one', async () => {
