@@ -1,0 +1,23 @@
+README.md
+  s_fc38ff4b828b91::t_92c4b3c483a9d6 56-57,96,104-121
+src/index.ts
+  s_fc38ff4b828b91::t_fdee964614617c 41-42,52-56,59,83,89,97-106,172-177,193-200,219-233,235,237-240
+test/index.test.ts
+  s_fc38ff4b828b91::t_3577f6e185a067 2-3,6,151-217
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "734ac9ae4de14ffeda7d9eaf46a4f56f74986947",
+  "prompts": {},
+  "sessions": {
+    "s_fc38ff4b828b91": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c7039c1f-7e99-4714-9b5f-5bc634a75e75",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
