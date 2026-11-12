@@ -53,6 +53,8 @@ HTTP Request → JevRouter → Jev: "does the request match this description?" �
 - Like a normal router, **the first registered route that matches wins**. A route matches when its probability reaches the `threshold`.
 - The handler is a normal Hono handler: `c.req.method` and `c.req.path` are those of the real request.
 - If no description matches, the request falls through, usually to `app.notFound()`.
+- If asking Jev fails (an error response, a network error, a timeout), the error is rethrown, as a `JevError`, so Hono answers 500 unless you handle it with [`app.onError`](#handling-jev-failures).
+- Two routes cannot have the same description: registering the second one throws, because Jev answers by description.
 - Everything else works as usual. Path routes and middleware are handled by Hono's `TrieRouter`, and a path route that returns a response wins before Jev is asked.
 
 ```ts
@@ -91,12 +93,31 @@ new JevRouter({
   apiKey, // string | (c) => string
   baseURL, // default: 'https://api.typesafe.ai'
   threshold, // a route matches when its probability is at least this. default: 0.5
+  timeoutMs, // how long to wait for Jev before giving up. default: 10000, 0 disables it
   maxBodyLength, // how much of the request body Jev sees. default: 4096
   redactHeaders, // header values Jev must not see. default: authorization, cookie, ...
   run, // reach Jev some other way
   choose, // replace the whole decision
 })
 ```
+
+### Handling Jev failures
+
+A failed Jev call (an error response, a network error, a timeout) is thrown as a `JevError`, with the original error as `err.cause`. Hono answers 500 unless you handle it in `app.onError`:
+
+```ts
+import { JevError } from 'hono-jev-router'
+
+app.onError((err, c) => {
+  // Make a Jev outage look like "no semantic route matched"
+  if (err instanceof JevError) {
+    return c.notFound()
+  }
+  return c.text('Internal Server Error', 500)
+})
+```
+
+A call that does not finish within `timeoutMs` fails too. A missing `apiKey` (without `run` or `choose`) throws a plain configuration error, not a `JevError`.
 
 ### `threshold`
 

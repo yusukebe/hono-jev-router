@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
+import { createServer } from 'node:http'
+import type { AddressInfo } from 'node:net'
 import { test } from 'node:test'
 import { Hono } from 'hono'
-import { JevRouter, type JevRequest } from '../src/index.ts'
+import { JevError, JevRouter, type JevRequest } from '../src/index.ts'
 
 // Stands in for Jev: a route matches when its description mentions the User-Agent or the method
 const run = async (_c: unknown, request: JevRequest) => {
@@ -145,4 +147,71 @@ test('sensitive header values are not shown to Jev', async () => {
   })
   // The handler still sees the real value
   assert.equal(await res.text(), 'Bearer secret')
+})
+
+const hang = () => new Promise<never>(() => {})
+
+const failing = async () => {
+  throw new Error('Jev request failed: 500 model unavailable')
+}
+
+test('a Jev failure is thrown as a JevError, so Hono answers 500 by default', async () => {
+  const app = new Hono({ router: new JevRouter({ run: failing }) })
+  app.on('jev', 'any GET request', (c) => c.text('matched'))
+  assert.equal((await app.request('/')).status, 500)
+})
+
+test('app.onError can tell a JevError and fall through to notFound', async () => {
+  const app = new Hono({ router: new JevRouter({ run: failing }) })
+  app.on('jev', 'any GET request', (c) => c.text('matched'))
+  app.onError((err, c) => {
+    assert.ok(err instanceof JevError)
+    assert.match((err.cause as Error).message, /model unavailable/)
+    return c.notFound()
+  })
+  assert.equal((await app.request('/')).status, 404)
+})
+
+test('a Jev call that never replies times out, for the REST call and for run', async () => {
+  const server = createServer(() => {})
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+  const { port } = server.address() as AddressInfo
+  try {
+    const optionsList = [{ run: hang }, { apiKey: 'test', baseURL: `http://127.0.0.1:${port}` }]
+    const results = await Promise.all(
+      optionsList.map(async (options) => {
+        const app = new Hono({
+          router: new JevRouter({ ...options, timeoutMs: 50 }),
+        })
+        app.on('jev', 'any GET request', (c) => c.text('matched'))
+        app.onError((err, c) => (err instanceof JevError ? c.notFound() : c.text('other', 500)))
+        return Promise.race([
+          Promise.resolve(app.request('/')).then((res) => res.status),
+          new Promise<'hung'>((resolve) => setTimeout(() => resolve('hung'), 1000)),
+        ])
+      })
+    )
+    assert.deepEqual(results, [404, 404])
+  } finally {
+    server.closeAllConnections()
+    server.close()
+  }
+})
+
+test('a missing apiKey is a configuration error, not a fall through', async () => {
+  const app = new Hono({ router: new JevRouter() })
+  app.on('jev', 'any GET request', (c) => c.text('matched'))
+  app.onError((err, c) => c.text(err.message, 500))
+  const res = await app.request('/')
+  assert.equal(res.status, 500)
+  assert.match(await res.text(), /apiKey/)
+})
+
+test('rejects duplicate descriptions', () => {
+  const app = new Hono({ router: new JevRouter({ run }) })
+  app.on('jev', 'same description', (c) => c.text('first'))
+  assert.throws(
+    () => app.on('jev', 'same description', (c) => c.text('second')),
+    /Duplicate Jev route description: same description/
+  )
 })
